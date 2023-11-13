@@ -1,4 +1,4 @@
-"""(Serial) Implementation of Algorithm 1, Decentralized CrowdCache, in "CrowdCache: A Decentralized Game-Theoretic
+"""(Serial) Implementation of Algorithm 2 (& 1), Decentralized CrowdCache, in "CrowdCache: A Decentralized Game-Theoretic
 Framework for Mobile Edge Content Sharing" by Nguyen et al."""
 
 import numpy as np
