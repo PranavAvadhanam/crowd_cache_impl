@@ -195,6 +195,19 @@ def generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_r
         move_users(users,max_move,bounding_box,use_bounding)
     return output
 
+def generate_graph(user_count, initial_dataset="", use_bounding=False, bounding_box=[33.414585,-111.939926,33.430918,-111.926184], min_range=180, max_range=200, max_move=50):
+    if initial_dataset:
+        users = get_users_from_csv(initial_dataset)
+    if use_bounding and (bounding_box is None or len(bounding_box) < 4):
+        bounding_box = calc_bounding_box(users)
+    else:
+        users = generate_users(user_count, bounding_box)
+    set_range(users, max_range, min_range)
+
+    graph = get_graph(users)
+    move_users(users, max_move, bounding_box, use_bounding)
+    return graph
+
 def main(users = 5, iters = 4):
     # PARAMETERS
     # CSV file containing columns for "Latitude" and "Longitude" of users initial positions
