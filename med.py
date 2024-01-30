@@ -8,17 +8,22 @@ class MED:
     x: action of this MED
     """
 
-    def __init__(self, users):
-        self.z = np.zeros(users)
-        self.x = 0
-        # attributes from previous iteration
-        self.z_excl_self_prev = np.zeros(users - 1) # previous iter's estimates, excluding self
-        self.x_prev = 0
+    def __init__(self, users, max_local_resource, id):
+        # initializing to 0 may lead to updating failure (0->0->0...)
+        self.z = np.array([np.random.uniform(0,max_local_resource[i]) for i in range(users)])
+        self.x = np.random.uniform(0,max_local_resource[id])
+        self.received_z = np.zeros(shape=(users,users)) # received_z[j]: the z_j received from MED j
+        self.received_z[id] = self.z
 
-def init_devices(users):
+        # attributes from previous iteration
+        self.z_prev = np.zeros(users)
+        self.x_prev = 0
+        self.z_excl_self_prev = np.zeros(users - 1) # previous iter's estimates, excluding self
+
+def init_devices(users, max_local_resource):
     devices = []
     for i in range(users):
-        devices.append(MED(users))
+        devices.append(MED(users, max_local_resource, i))
     return devices
 
 #

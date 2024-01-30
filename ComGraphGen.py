@@ -9,7 +9,9 @@ import json
 import os
 import shutil
 import folium
+import time
 import folium.plugins
+import multiprocessing as mp
 
 # Generate initial positions
 def generate_users(count, bounding_box):
@@ -22,7 +24,7 @@ def generate_users(count, bounding_box):
 
     return pandas.DataFrame(data,columns=['Latitude','Longitude'])
 
-# Import initial posistions
+# Import initial positions
 def get_users_from_csv(file_path):
     return pandas.read_csv(file_path)
     
@@ -47,7 +49,7 @@ def get_graph(users):
     connections = users.apply(lambda x: [is_connected(x,users.loc[idx]) for idx in range(x.name, len(users))], axis=1)
     lst = connections.values.tolist()
     pad = len(max(lst, key=len))
-    com_graph = np.array([[0]*(pad-len(i)) + i for i in lst])
+    com_graph = np.array([[0]*(pad-len(i)) + i for i in lst], dtype=np.double)
     com_graph = com_graph + com_graph.T - np.diag(np.diag(com_graph))
     return com_graph
 
@@ -175,7 +177,7 @@ def save_files(output, path, include_plots):
         shutil.rmtree(path)
     os.makedirs(path)
     save_json(output, path)
-    save_iteration_files(output, path, include_plots)
+    # save_iteration_files(output, path, include_plots)
 
 def generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_range,max_range, iterations, max_move):
     # Create initial positions and range
@@ -188,12 +190,18 @@ def generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_r
     set_range(users, max_range,min_range)
 
     output = []
-
+    # pool = mp.Pool(8);
+    # pool.starmap(data_gen, [(output, users, max_move, bounding_box, use_bounding) for _ in range(iterations)])
     for _ in range(iterations):
         graph = get_graph(users)
         output.append({"users":users.copy(),"com_graph":graph})
         move_users(users,max_move,bounding_box,use_bounding)
     return output
+
+def data_gen(output, users, max_move, bounding_box, use_bounding):
+    graph = get_graph(users)
+    output.append({"users": users.copy(), "com_graph": graph})
+    move_users(users, max_move, bounding_box, use_bounding)
 
 def generate_graph(user_count, initial_dataset="", use_bounding=False, bounding_box=[33.414585,-111.939926,33.430918,-111.926184], min_range=180, max_range=200, max_move=50):
     if initial_dataset:
@@ -208,7 +216,7 @@ def generate_graph(user_count, initial_dataset="", use_bounding=False, bounding_
     move_users(users, max_move, bounding_box, use_bounding)
     return graph
 
-def main(users = 5, iters = 4):
+def main(users = 512, iters = 6500):
     # PARAMETERS
     # CSV file containing columns for "Latitude" and "Longitude" of users initial positions
     initial_dataset = ""
@@ -236,4 +244,6 @@ def main(users = 5, iters = 4):
     save_files(output,output_folder,include_plots)
 
 if __name__ == "__main__":
+    s = time.time()
     main()
+    print(time.time() - s)
