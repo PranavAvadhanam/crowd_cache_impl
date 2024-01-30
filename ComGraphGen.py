@@ -216,7 +216,7 @@ def generate_graph(user_count, initial_dataset="", use_bounding=False, bounding_
     move_users(users, max_move, bounding_box, use_bounding)
     return graph
 
-def main(users = 512, iters = 6500):
+def main(users = 512, iters = 2000):
     # PARAMETERS
     # CSV file containing columns for "Latitude" and "Longitude" of users initial positions
     initial_dataset = ""
