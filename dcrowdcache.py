@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # set training parameters
 users = 512
 iters = 1999
-step_size = .00004  # adjust depending on users and iters (for 500 users, ~2000 iters: set to 20)
+step_size = .00004 # adjust based on users & iters
 heavy_ball_weight = 0.8
 price_weight = 0.5  # 'gamma'
 max_reward = 64*users
