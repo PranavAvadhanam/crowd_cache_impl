@@ -161,33 +161,45 @@ def save_iteration_files(output, path, include_plots):
             plot_charts(output[itr], iter_path)
 
 # Output json
-def save_json(output,path):
+def save_json(output,path, iteration_batch=0):
+    
     prepped_output = []
     for iter in output:
         prepped_output.append({"users":iter['users'].to_json(orient="split"),"com_graph":iter['com_graph'].tolist()})
 
     json_output = json.dumps(prepped_output)
-    file_path = os.path.join(path,"output.json")
+    file_name = "output_batch_"+str(iteration_batch)+".json"
+    file_path = os.path.join(path,file_name)
     with open(file_path,"w") as outfile:
         outfile.write(json_output)
 
-def save_files(output, path, include_plots):
+def save_files(output, path, include_plots, iteration_batch=0):
     path = os.path.join(path,"output")
-    if os.path.exists(path):
+    if os.path.exists(path) and iteration_batch == 0:
         shutil.rmtree(path)
-    os.makedirs(path)
-    save_json(output, path)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    save_json(output, path, iteration_batch)
     # save_iteration_files(output, path, include_plots)
 
-def generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_range,max_range, iterations, max_move):
+def generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_range,max_range, iterations, max_move, iteration_batch = 0):
     # Create initial positions and range
     if initial_dataset:
         users = get_users_from_csv(initial_dataset)
         if use_bounding and (bounding_box == None or len(bounding_box) < 4):
             bounding_box = calc_bounding_box(users)
+        set_range(users, max_range,min_range)
+    if iteration_batch > 0: # accessing positions & range from the last iteration of an iteration outputs json file
+        outputFile = os.getcwd()+'/output/output_batch_' + str(iteration_batch) + '.json'
+        f = open(outputFile)
+        dataJson = json.load(f)
+        f.close()
+    
+        users = pandas.read_json(dataJson[len(dataJson)-1]['users'], orient='split')
+
     else:
         users = generate_users(user_count,bounding_box)
-    set_range(users, max_range,min_range)
+        set_range(users, max_range,min_range)
 
     output = []
     # pool = mp.Pool(8);
@@ -240,10 +252,22 @@ def main(users = 512, iters = 2000):
     # Include plots of users for each iteration
     include_plots = True
 
-    output = generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_range, max_range, iterations, max_move)
-    save_files(output,output_folder,include_plots)
+    for i in range(4): # generates 8000 total iterations
+        output = generate_data(initial_dataset, user_count, use_bounding, bounding_box, min_range, max_range, iterations, max_move, iteration_batch = i)
+        save_files(output,output_folder,include_plots, iteration_batch=(i+1))
 
 if __name__ == "__main__":
     s = time.time()
     main()
     print(time.time() - s)
+
+'''
+sharding all 8000 iterations of data into 4 batches did not help:
+Issue: process killed after v. long time running (~20 hrs) + system runs out of application memory
+- Memory constraint 
+
+Possible solution: AWS high memory instance 
+- issue: communicating ~7GB worth of data over network connection + cost
+
+iterative: difficult to parallelize, has to be run on single core (speed-ups difficult)
+'''
